@@ -1,6 +1,6 @@
 # Facebook Messenger Chatbot.
 
-> This a V2 of [Page-bot](https://github.com/Sman12345678/Facebook-Chatbot)
+> This a V2 of [Page-bot](https://github.com/Sman12345678/Page-bot)
 
 An intelligent Facebook Messenger chatbot built with Python, featuring automated responses, command processing, and persistent conversation memory. This bot leverages the Facebook Graph API and Flask to create an interactive messaging experience.
 
