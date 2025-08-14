@@ -1,0 +1,298 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kora AI Bot - Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #4a5568;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+
+            <div id="status-warning" style="display: none; background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 10px; border-radius: 5px; margin: 10px 0;"></div>
+
+        }
+
+        .status-online { background-color: #48bb78; }
+        .status-offline { background-color: #f56565; }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .card-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #667eea;
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .logs-container {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .logs {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.85rem;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 10px 5px;
+            transition: background 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #5a67d8;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Kora AI Bot Dashboard</h1>
+            <p>Monitoring & Statistics Panel</p>
+            <div id="status-display">
+                <span class="status-indicator status-offline" id="status-dot"></span>
+                <span id="status-text">Checking status...</span>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="card">
+                <div class="card-title">📊 Bot Status</div>
+                <div class="stat-value" id="uptime-value">--</div>
+                <div class="stat-label">Uptime</div>
+                <div style="margin-top: 15px;">
+                    <div id="initialized-status" class="stat-label">Initialization: --</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">💬 Message Stats</div>
+                <div class="stat-value" id="total-messages">--</div>
+                <div class="stat-label">Total Messages</div>
+                <div style="margin-top: 10px;">
+                    <div class="stat-label">Today: <span id="today-messages">--</span></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">👥 User Activity</div>
+                <div class="stat-value" id="active-users">--</div>
+                <div class="stat-label">Active Users</div>
+                <div style="margin-top: 10px;">
+                    <div class="stat-label">This Week: <span id="week-users">--</span></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">⚡ Performance</div>
+                <div class="stat-value" id="success-rate">--</div>
+                <div class="stat-label">Success Rate</div>
+                <div style="margin-top: 10px;">
+                    <div class="stat-label">Errors: <span id="error-count">--</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="logs-container">
+            <div class="card-title">📝 System Logs</div>
+            <button class="refresh-btn" onclick="refreshLogs()">🔄 Refresh Logs</button>
+            <button class="refresh-btn" onclick="clearLogs()">🗑️ Clear Display</button>
+            <div class="logs" id="logs-display">Loading logs...</div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Created by Kolawole Suleiman | Kora AI Bot v2.0</p>
+    </div>
+
+    <script>
+        async function fetchStats() {
+            try {
+                // Fetch bot status
+                const statusResponse = await fetch('/status');
+                const statusData = await statusResponse.json();
+                
+                document.getElementById('uptime-value').textContent = statusData.uptime;
+                document.getElementById('initialized-status').textContent = 
+                    `Initialization: ${statusData.initialized ? '✅ Complete' : '⚠️ Limited Mode'}`;
+                
+                const statusDot = document.getElementById('status-dot');
+                const statusText = document.getElementById('status-text');
+                
+                if (statusData.status === 'online') {
+                    statusDot.className = 'status-indicator status-online';
+                    statusText.textContent = `🟢 Online (${statusData.uptime})`;
+                } else {
+                    statusDot.className = 'status-indicator status-offline';
+                    statusText.textContent = '🔴 Offline';
+                }
+
+                // Update initialization warning if in limited mode
+                if (!statusData.initialized) {
+                    document.getElementById('status-warning').style.display = 'block';
+                    document.getElementById('status-warning').innerHTML = 
+                        `⚠️ <strong>Limited Mode:</strong> Facebook integration disabled. Set valid PAGE_ACCESS_TOKEN to enable full functionality.`;
+                }
+
+                // Fetch database stats
+                try {
+                    const dbResponse = await fetch('/api/stats');
+                    if (dbResponse.ok) {
+                        const dbData = await dbResponse.json();
+                        document.getElementById('total-messages').textContent = dbData.total_messages || '--';
+                        document.getElementById('today-messages').textContent = dbData.today_messages || '--';
+                        document.getElementById('active-users').textContent = dbData.active_users || '--';
+                        document.getElementById('error-rate').textContent = `${dbData.error_rate || 0}%`;
+                    }
+                } catch (error) {
+                    console.log('Stats endpoint not available');
+                    document.getElementById('active-users').textContent = dbData.active_users || '--';
+                    document.getElementById('week-users').textContent = dbData.week_users || '--';
+                    document.getElementById('success-rate').textContent = dbData.success_rate || '--';
+                    document.getElementById('error-count').textContent = dbData.error_count || '--';
+                }
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+            }
+        }
+
+        async function refreshLogs() {
+            try {
+                const response = await fetch('/api/logs');
+                const data = await response.json();
+                document.getElementById('logs-display').textContent = data.logs || 'No logs available';
+            } catch (error) {
+                document.getElementById('logs-display').textContent = 'Error loading logs: ' + error.message;
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('logs-display').textContent = 'Logs cleared from display...';
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(fetchStats, 30000);
+        
+        // Initial load
+        fetchStats();
+        refreshLogs();
+    </script>
+</body>
+</html>

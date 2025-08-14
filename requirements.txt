@@ -1,0 +1,9 @@
+Flask
+requests
+python-dotenv
+flask-cors
+google-generativeai
+beautifulsoup4
+scikit-learn
+psutil
+urllib3
