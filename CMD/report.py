@@ -8,23 +8,13 @@ def execute(message,sender_id):
         return "🧘 Please provide a message to be sent to Admin"
 
     # Send to admin
-    admin_message = f"""📝 **New Feedback Report**
+    admin_message = f"""📝 *New Feedback Report*
 
 👤 **From User:** {sender_id}
 📅 **Time:** {time.strftime('%Y-%m-%d %H:%M:%S')}
 
 💬 **Message:**
-{message}
-
----
-# Placeholder for user stats, as they are not available in this context.
-# If user_stats were available, they would be formatted here.
-# Example:
-# 📊 **User Stats:**
-# • Total messages: {user_stats['total_messages']}
-# • First interaction: {user_stats['first_interaction']}
-# • Last seen: {user_stats['last_interaction']}
-
+{message}\n
 🤖 *Powered by Kora AI*"""
 
     # Prepare the message data with quick replies for the admin
