@@ -428,7 +428,7 @@ def webhook():
                 # --- GREETING FOR GET STARTED BUTTON ---
                 if "postback" in event:
                     payload = event["postback"].get("payload", "")
-                    if payload == "GET_STARTED":
+                    if payload == "get_started_button":
                         greeting = """👋 Welcome! I'm Kora AI, your intelligent assistant!
 
 🤖 **What I can do:**
@@ -722,7 +722,7 @@ Example:
                         elif message_text:
                             try:
                                 # Check if message contains URLs (don't treat as image)
-                                url_patterns = ['http://', 'https://', 'www.', '.com', '.org', '.net']
+                                url_patterns = ['http://', 'https://', 'www.', '.com', '.org', '.net', '.py','.js','.html']
                                 contains_url = any(pattern in message_text.lower() for pattern in url_patterns)
 
                                 if contains_url:
