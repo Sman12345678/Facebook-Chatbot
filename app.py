@@ -872,6 +872,20 @@ def user_history():
 def error(e):
     return render_template('error.html')
 
+def autouptime():
+    url = os.getenv("RENDER_EXTERNAL_URL")
+    if not url:
+        logger.info("No RENDER_EXTERNAL_URL found, auto uptimer is disabled.")
+        return
+    logger.info(f"Auto uptimer started for {url}")
+    while True:
+        try:
+            time.sleep(20)
+            resp = requests.get(url)
+            logger.debug(f"Uptimer ping sent to {url}, status: {resp.status_code}")
+        except Exception as e:
+            logger.error(f"Error in auto uptimer: {str(e)}")
+
 
 def get_bot_uptime():
     return time.time() - start_time
@@ -898,5 +912,5 @@ if __name__ == '__main__':
     CREATED BY SULEIMAN
     ==================""")
     threading.Thread(target=post, daemon=True).start()
-
+    threading.Thread(target=autouptime,daemon=True).start()
     app.run(debug=True, host='0.0.0.0',port=3000)
