@@ -1,7 +1,7 @@
 import os
 import sqlite3
 
-def execute(sender_id, query):
+def execute(query, sender_id):
     ADMIN_ID = os.getenv("ADMIN_ID")
     if str(sender_id) != str(ADMIN_ID):
         return "⛔ Unauthorized: This command is for admin only."
