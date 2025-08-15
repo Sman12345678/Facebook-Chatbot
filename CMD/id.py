@@ -1,5 +1,5 @@
 Info ={
 "Description":"Get your psid"
 }
-def execute(sender_id, query):
-    return f"🆔 Your ID:\n• `{sender_id}`"
+def execute(sender_id, query=None):
+    return f"🆔 Your ID » • {sender_id}"
