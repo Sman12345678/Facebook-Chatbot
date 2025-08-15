@@ -669,21 +669,289 @@ Example:
                             response = f"🚫 **Block User Confirmation**\n\nUser {target_user_id[:8]}... would be blocked.\n\n⚠️ This feature is not yet implemented in the current version."
                             store_message(sender_id, response, "bot", "text")
                             send_message(sender_id, response)
-                        else:
-                            response = "🚫 Admin access required"
-                            store_message(sender_id, response, "bot", "text")
-                            send_message(sender_id, response)
-                        continue
-                    else:
-                        # Handle other postback payloads
-                        store_message(sender_id, f"[Postback: {payload}]", "user", "postback")
-                        response = f"Received postback: {payload}"
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    try:
+        # Check if bot is properly initialized
+        if not INITIALIZED:
+            logger.warning("Webhook received but bot not properly initialized - check Facebook tokens")
+            return "Bot not initialized", 503
+
+        data = request.get_json()
+        logger.debug(f"Received webhook data: {json.dumps(data, indent=2)}")
+
+        if data.get("object") != "page":
+            logger.warning("Received non-page object in webhook")
+            return "Not a page object", 404
+
+        def handle_payload(sender_id, payload):
+            # All your payload handling logic goes here (copied from postback handling)
+            if payload == "get_started_button":
+                greeting = """👋 Welcome! I'm Kora AI, your intelligent assistant!
+
+🤖 **What I can do:**
+• 📝 Answer questions and provide information
+• 🖼️ Analyze images you send me
+• 🎨 Generate images with /imagine command
+• 📰 Get latest news with /bbc
+• 🎵 Find lyrics with /lyrics
+• ✉️ Send emails with /mail
+• ⏰ Check time with /time
+
+Type **/help** to see all available commands!
+
+How can I assist you today? 😊"""
+                store_message(sender_id, "[Get Started - New User]", "user", "postback")
+                store_message(sender_id, greeting, "bot", "text")
+                send_message(sender_id, greeting)
+
+                # Send quick reply buttons for popular commands
+                quick_replies = {
+                    "text": "Choose a quick action:",
+                    "quick_replies": [
+                        {
+                            "content_type": "text",
+                            "title": "📰 Latest News",
+                            "payload": "QUICK_NEWS"
+                        },
+                        {
+                            "content_type": "text",
+                            "title": "🎨 Generate Image",
+                            "payload": "QUICK_IMAGE"
+                        },
+                        {
+                            "content_type": "text",
+                            "title": "📜 Help Menu",
+                            "payload": "QUICK_HELP"
+                        },
+                        {
+                            "content_type": "text",
+                            "title": "📊 Bot Stats",
+                            "payload": "QUICK_STATS"
+                        }
+                    ]
+                }
+                send_quick_reply(sender_id, quick_replies)
+                return True
+
+            elif payload == "QUICK_NEWS":
+                handle_command_message(sender_id, "/bbc")
+                return True
+            elif payload == "QUICK_IMAGE":
+                response = "🎨 To generate an image, just describe what you want to see! Example: 'Create a beautiful sunset over mountains'"
+                store_message(sender_id, response, "bot", "text")
+                send_message(sender_id, response)
+                return True
+            elif payload == "QUICK_HELP":
+                handle_command_message(sender_id, "/help")
+                return True
+            elif payload == "QUICK_STATS":
+                handle_command_message(sender_id, "/stats")
+                return True
+            elif payload == "ADMIN_STATS":
+                handle_command_message(sender_id, "/stats")
+                return True
+            elif payload == "ADMIN_LOGS":
+                if str(sender_id) == str(ADMIN_ID):
+                    try:
+                        with open('app_debug.log', 'r') as f:
+                            logs = f.read()[-2000:]  # Last 2000 characters
+                        response = f"📋 **Recent Logs:**\n```\n{logs}\n```"
                         store_message(sender_id, response, "bot", "text")
                         send_message(sender_id, response)
+                    except Exception as e:
+                        error_msg = f"❌ Error reading logs: {str(e)}"
+                        store_message(sender_id, error_msg, "bot", "error")
+                        send_message(sender_id, error_msg)
+                else:
+                    response = "🚫 Admin access required"
+                    store_message(sender_id, response, "bot", "text")
+                    send_message(sender_id, response)
+                return True
+            elif payload == "ADMIN_MESSAGES":
+                if str(sender_id) == str(ADMIN_ID):
+                    try:
+                        c = conn.cursor()
+                        c.execute("""
+                            SELECT user_id, message, sender, timestamp 
+                            FROM conversations 
+                            ORDER BY timestamp DESC 
+                            LIMIT 10
+                        """)
+                        recent = c.fetchall()
+                        response = "📬 **Recent Messages:**\n\n"
+                        for msg in recent:
+                            response += f"👤 User: {msg[0][:8]}...\n💬 {msg[1][:50]}...\n📅 {msg[3]}\n---\n"
+                        store_message(sender_id, response, "bot", "text")
+                        send_message(sender_id, response)
+                    except Exception as e:
+                        error_msg = f"❌ Error fetching messages: {str(e)}"
+                        store_message(sender_id, error_msg, "bot", "error")
+                        send_message(sender_id, error_msg)
+                else:
+                    response = "🚫 Admin access required"
+                    store_message(sender_id, response, "bot", "text")
+                    send_message(sender_id, response)
+                return True
+            elif payload == "ADMIN_USERS":
+                if str(sender_id) == str(ADMIN_ID):
+                    try:
+                        c = conn.cursor()
+                        c.execute("""
+                            SELECT user_id, COUNT(*) as msg_count, MAX(timestamp) as last_seen
+                            FROM conversations 
+                            GROUP BY user_id 
+                            ORDER BY last_seen DESC 
+                            LIMIT 10
+                        """)
+                        users = c.fetchall()
+                        response = "👥 **Active Users:**\n\n"
+                        for user in users:
+                            response += f"👤 ID: {user[0][:8]}...\n💬 Messages: {user[1]}\n📅 Last seen: {user[2]}\n---\n"
+                        store_message(sender_id, response, "bot", "text")
+                        send_message(sender_id, response)
+                    except Exception as e:
+                        error_msg = f"❌ Error fetching users: {str(e)}"
+                        store_message(sender_id, error_msg, "bot", "error")
+                        send_message(sender_id, error_msg)
+                else:
+                    response = "🚫 Admin access required"
+                    store_message(sender_id, response, "bot", "text")
+                    send_message(sender_id, response)
+                return True
+            elif payload == "ADMIN_SYSTEM":
+                if str(sender_id) == str(ADMIN_ID):
+                    import psutil
+                    try:
+                        uptime = get_bot_uptime()
+                        hours, remainder = divmod(uptime, 3600)
+                        minutes, seconds = divmod(remainder, 60)
+                        
+                        cpu_percent = psutil.cpu_percent()
+                        memory = psutil.virtual_memory()
+                        
+                        response = f"""🔧 **System Information:**
+
+⏱️ **Uptime:** {int(hours)}h {int(minutes)}m {int(seconds)}s
+💾 **Memory:** {memory.percent}% used
+🖥️ **CPU:** {cpu_percent}% used
+📊 **Status:** {'✅ Initialized' if INITIALIZED else '❌ Limited Mode'}
+🌐 **Facebook API:** {'✅ Connected' if INITIALIZED else '❌ Disconnected'}
+
+💡 **Bot Version:** Kora AI v2.0"""
+                        store_message(sender_id, response, "bot", "text")
+                        send_message(sender_id, response)
+                    except Exception as e:
+                        error_msg = f"❌ Error getting system info: {str(e)}"
+                        store_message(sender_id, error_msg, "bot", "error")
+                        send_message(sender_id, error_msg)
+                else:
+                    response = "🚫 Admin access required"
+                    store_message(sender_id, response, "bot", "text")
+                    send_message(sender_id, response)
+                return True
+            elif payload == "ADMIN_BROADCAST":
+                if str(sender_id) == str(ADMIN_ID):
+                    response = """📢 **Broadcast Mode**
+
+To broadcast a message to all users, use:
+`/broadcast [your message]`
+
+Example:
+`/broadcast 🎉 Bot updated with new features!`
+
+This will send your message to all users who have interacted with the bot."""
+                    store_message(sender_id, response, "bot", "text")
+                    send_message(sender_id, response)
+                else:
+                    response = "🚫 Admin access required"
+                    store_message(sender_id, response, "bot", "text")
+                    send_message(sender_id, response)
+                return True
+            elif payload.startswith("REPLY_TO_"):
+                if str(sender_id) == str(ADMIN_ID):
+                    target_user_id = payload.replace("REPLY_TO_", "")
+                    response = f"""✉️ **Reply Mode Activated**
+
+You are now replying to user: {target_user_id[:8]}...
+
+To send a reply, use:
+`/reply {target_user_id} [your message]`
+
+Example:
+`/reply {target_user_id} Thank you for your feedback!`"""
+                    store_message(sender_id, response, "bot", "text")
+                    send_message(sender_id, response)
+                else:
+                    response = "🚫 Admin access required"
+                    store_message(sender_id, response, "bot", "text")
+                    send_message(sender_id, response)
+                return True
+            elif payload.startswith("USER_HISTORY_"):
+                if str(sender_id) == str(ADMIN_ID):
+                    target_user_id = payload.replace("USER_HISTORY_", "")
+                    try:
+                        history = get_conversation_history(target_user_id)
+                        response = f"📜 **Conversation History for {target_user_id[:8]}...**\n\n"
+                        recent_messages = history[-10:] if len(history) > 10 else history
+                        for msg in recent_messages:
+                            role_emoji = "👤" if msg["role"] == "user" else "🤖"
+                            content = msg["content"][:100] + "..." if len(msg["content"]) > 100 else msg["content"]
+                            response += f"{role_emoji} {content}\n---\n"
+                        if len(history) > 10:
+                            response += f"\n📈 Showing last 10 of {len(history)} total messages"
+                        store_message(sender_id, response, "bot", "text")
+                        send_message(sender_id, response)
+                    except Exception as e:
+                        error_msg = f"❌ Error fetching user history: {str(e)}"
+                        store_message(sender_id, error_msg, "bot", "error")
+                        send_message(sender_id, error_msg)
+                else:
+                    response = "🚫 Admin access required"
+                    store_message(sender_id, response, "bot", "text")
+                    send_message(sender_id, response)
+                return True
+            elif payload.startswith("BLOCK_USER_"):
+                if str(sender_id) == str(ADMIN_ID):
+                    target_user_id = payload.replace("BLOCK_USER_", "")
+                    response = f"🚫 **Block User Confirmation**\n\nUser {target_user_id[:8]}... would be blocked.\n\n⚠️ This feature is not yet implemented in the current version."
+                    store_message(sender_id, response, "bot", "text")
+                    send_message(sender_id, response)
+                else:
+                    response = "🚫 Admin access required"
+                    store_message(sender_id, response, "bot", "text")
+                    send_message(sender_id, response)
+                return True
+            else:
+                # Handle other postback payloads
+                store_message(sender_id, f"[Postback: {payload}]", "user", "postback")
+                response = f"Received postback: {payload}"
+                store_message(sender_id, response, "bot", "text")
+                send_message(sender_id, response)
+                return True
+
+            return False
+
+        for entry in data["entry"]:
+            for event in entry.get("messaging", []):
+                sender_id = event["sender"]["id"]
+
+                # Handle postback payloads (button clicks)
+                if "postback" in event:
+                    payload = event["postback"].get("payload", "")
+                    if handle_payload(sender_id, payload):
                         continue
 
+                # Handle message events (normal text, quick reply payloads, attachments)
                 if "message" in event:
                     message = event["message"]
+                    # Handle quick reply payloads
+                    if "quick_reply" in message:
+                        payload = message["quick_reply"].get("payload", "")
+                        logger.debug(f"Detected quick reply payload: {payload}")
+                        if handle_payload(sender_id, payload):
+                            continue
+
                     message_text = message.get("text", "")
                     attachments = message.get("attachments", [])
                     logger.debug(f"Processing message from {sender_id}: {message_text}")
@@ -718,7 +986,7 @@ Example:
                                         send_message(sender_id, error_msg)
                                         report(str(e))
 
-                        # Handle plain text messages
+                        # Handle plain text messages (non-command, non-image)
                         elif message_text:
                             try:
                                 # Check if message contains URLs (don't treat as image)
