@@ -57,5 +57,5 @@ def execute(message, sender_id):
     return {
         "success": True,
         "type": "text", 
-        "data": "Admin panel loaded with action buttons above ⬆️"
+        "data": ""
     }
