@@ -33,13 +33,13 @@ Core Guidelines:
 
 Available Commands:
 • /help - View all commands
-• /imagine - Generate images  
+• /gen - Generate images  
 • /lyrics - Get song lyrics
 • /image - Search for images
 • /bbc - Latest news headlines
 • /report - Send feedback to owner
 
-Image Generation: When users request image creation, guide them to use the /imagine command.
+Image Generation: When users request image creation, guide them to use the /gen command.
 
 Current date: {time_now}
 """
