@@ -119,4 +119,4 @@ def post():
             print(f"[{datetime.now()}] ❌ Auto-post failed: {e}")
             app.report(f"Autopost error: {e}")
 
-        time.sleep(86400)  # wait 24 hours
+        time.sleep(604800)  # wait a week 😅
