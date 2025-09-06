@@ -1,3 +1,4 @@
+from config import ADMINS
 import os
 import app
 
@@ -6,8 +7,7 @@ Info = {
 }
 
 def execute(message, sender_id):
-    ADMIN_ID = os.getenv("ADMIN_ID")
-    if str(sender_id) != str(ADMIN_ID):
+    if str(sender_id) not in [str(a) for a in ADMINS]:
         return {
             "success": False,
             "type": "text",
