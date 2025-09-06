@@ -12,7 +12,8 @@ def execute(message, sender_id):
 📅 **Time:** {time.strftime('%Y-%m-%d %H:%M:%S')}
 
 💬 **Message:**
-{message}\n
+{message}
+
 🤖 *Powered by Kora AI*"""
 
     admin_message_data = {
@@ -36,17 +37,23 @@ def execute(message, sender_id):
         ]
     }
 
-    # Only send to valid PSIDs (digits only)
+    # Only send to valid PSIDs (digits only, min length 5)
     valid_admins = [str(a) for a in ADMINS if str(a).isdigit() and len(str(a)) > 4]
     print("Valid admins to send quick reply:", valid_admins)
 
-    try:
-        success = Suleiman.send_quick_reply(valid_admins, admin_message_data)
-    except Exception as e:
-        print("Error sending quick reply:", e)
-        return f"⚠️ Failed to send your message to the admin. Error: {str(e)}"
+    if not valid_admins:
+        return "⚠️ No valid admin IDs found."
 
-    if success:
-        return "✅ Your message has been sent to the admin successfully!"
-    else:
-        return "⚠️ Failed to send your message to the admin. Please try again later."
+    results = []
+    for admin_id in valid_admins:
+        try:
+            success = Suleiman.send_quick_reply(admin_id, admin_message_data)
+            if success:
+                results.append(f"✅ Sent to {admin_id}")
+            else:
+                results.append(f"⚠️ Failed for {admin_id}")
+        except Exception as e:
+            print(f"Error sending quick reply to {admin_id}: {e}")
+            results.append(f"❌ Error for {admin_id}: {str(e)}")
+
+    return "\n".join(results)
