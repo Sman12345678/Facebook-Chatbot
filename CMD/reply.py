@@ -7,8 +7,8 @@ Info = {
 }
 
 def execute(message, sender_id):
-    ADMIN_ID = os.getenv("ADMIN_ID")
-    if str(sender_id) != str(ADMIN_ID):
+    # ADMIN_ID = os.getenv("ADMIN_ID")
+    if str(sender_id) not in [str(a) for a in ADMINS]:
         return "🚫 This command is restricted to admin only."
     
     if not message or not message.strip():
