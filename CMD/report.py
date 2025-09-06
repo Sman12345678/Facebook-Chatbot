@@ -1,7 +1,8 @@
 import app as Suleiman
 import os
+from config import ADMINS
 import time
-user_id = os.getenv("ADMIN_ID")
+# user_id = os.getenv("ADMIN_ID")
 
 def execute(message,sender_id):
     if not message:
@@ -40,7 +41,7 @@ def execute(message,sender_id):
     }
 
     # Send the report to admin with quick reply buttons
-    success = Suleiman.send_quick_reply(user_id, admin_message_data)
+    success = Suleiman.send_quick_reply([str(a) for a in ADMINS], admin_message_data)
 
     if success:
         return "✅ Your message has been sent to the admin successfully!"
