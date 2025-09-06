@@ -1,9 +1,10 @@
 import os
+from config import ADMINS
 import sqlite3
 
 def execute(query=None, sender_id=None):
-    ADMIN_ID = os.getenv("ADMIN_ID")
-    if str(sender_id) != str(ADMIN_ID):
+    # ADMIN_ID = os.getenv("ADMIN_ID")
+    if str(sender_id) not in [str(a) for a in ADMINS]:
         return "⛔ Unauthorized: This command is for admin only."
     try:
         conn = sqlite3.connect('bot_memory.db')
