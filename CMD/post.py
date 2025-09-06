@@ -1,8 +1,9 @@
+from config import ADMINS
 import os
 import requests
 
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
-ADMIN_ID = os.getenv("ADMIN_ID")
+# ADMIN_ID = os.getenv("ADMIN_ID")
 
 def post_text_to_page(message):
     url = "https://graph.facebook.com/v22.0/me/feed"
@@ -24,7 +25,7 @@ def post_image_to_page(image_url, caption=""):
     return response.json()
 
 def execute(message, sender_id):
-    if sender_id != ADMIN_ID:
+    if str(sender_id) not in [str(a) for a in ADMINS]:
         return "⛔ Unauthorized user. Only the admin can post."
 
     message = message.strip()
