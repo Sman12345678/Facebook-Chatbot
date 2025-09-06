@@ -1,14 +1,11 @@
 import app as Suleiman
-import os
 from config import ADMINS
 import time
-# user_id = os.getenv("ADMIN_ID")
 
-def execute(message,sender_id):
+def execute(message, sender_id):
     if not message:
         return "🧘 Please provide a message to be sent to Admin"
 
-    # Send to admin
     admin_message = f"""📝 *New Feedback Report*
 
 👤 **From User:** {sender_id}
@@ -18,7 +15,6 @@ def execute(message,sender_id):
 {message}\n
 🤖 *Powered by Kora AI*"""
 
-    # Prepare the message data with quick replies for the admin
     admin_message_data = {
         "text": admin_message,
         "quick_replies": [
@@ -40,8 +36,15 @@ def execute(message,sender_id):
         ]
     }
 
-    # Send the report to admin with quick reply buttons
-    success = Suleiman.send_quick_reply([str(a) for a in ADMINS], admin_message_data)
+    # Only send to valid PSIDs (digits only)
+    valid_admins = [str(a) for a in ADMINS if str(a).isdigit() and len(str(a)) > 4]
+    print("Valid admins to send quick reply:", valid_admins)
+
+    try:
+        success = Suleiman.send_quick_reply(valid_admins, admin_message_data)
+    except Exception as e:
+        print("Error sending quick reply:", e)
+        return f"⚠️ Failed to send your message to the admin. Error: {str(e)}"
 
     if success:
         return "✅ Your message has been sent to the admin successfully!"
