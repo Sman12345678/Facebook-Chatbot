@@ -11,7 +11,6 @@ from io import BytesIO
 import json
 import traceback
 from datetime import datetime, timezone
-from CMD import imagine
 from autopost import post
 import threading
 import psutil
@@ -381,23 +380,6 @@ def handle_command_message(sender_id, message_text):
         error_msg = f"Error processing command: {str(e)}"
         store_message(sender_id, error_msg, "bot", "error")
         send_message(sender_id, error_msg)
-def report(error_message):
-    """
-    Send an error message to the bot admin.
-    """
-    try:
-        formatted_message = f"""🚨Error Alert🚨
-
-🔴 Timestamp (UTC): {get_current_time()}
-
-🛠️ **Error Message:**
-{error_message}
-
-📂 |= End of Report =|"""
-        send_message(ADMIN_ID, formatted_message)
-        logger.info("Error successfully sent to the bot admin.")
-    except Exception as e:
-        logger.error(f"Failed to notify admin about the error: {e}")
 
 @app.route('/webhook', methods=['GET'])
 def verify():
