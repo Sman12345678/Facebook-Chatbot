@@ -8,7 +8,7 @@ from io import BytesIO
 import urllib3
 import time
 import json
-import app
+from report import report 
 
 # Disable SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -128,6 +128,6 @@ def handle_attachment(user_id, attachment_data, attachment_type="image", history
         return analysis_result
     except Exception as e:
         logger.error(f"Image analysis error: {str(e)}")
-        app.report(str(e))
+        report(str(e))
         return "🚨 Error analyzing the image. Please try again later."
         
