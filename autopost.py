@@ -2,10 +2,11 @@ import os
 import time
 import random
 import requests
+from report import report 
 from datetime import datetime
-import app
 from messageHandler import handle_text_message, handle_attachment, handle_text_command
-from app import PREFIX  # for command detection
+
+PREFIX = os.getenv("PREFIX","/")
 
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 PAGE_ID = os.getenv("PAGE_ID")  # set your Page ID in .env
@@ -93,7 +94,7 @@ def process_comments():
 
     except Exception as e:
         print(f"❌ Error processing comments: {e}")
-        app.report(f"Comment processing error: {e}")
+        report(f"Comment processing error: {e}")
 
 def get_content_pool():
     return [
@@ -204,7 +205,7 @@ def post():
                 result = post_text_to_page(message)
 
                 if result.get("error", {}).get("code") == 100:
-                    app.report(f"Autopost OAuthException, need app-scoped ID: {result['error']['message']}")
+                    report(f"Autopost OAuthException, need app-scoped ID: {result['error']['message']}")
 
                 print(f"[{datetime.now()}] ✅ Auto-posted: {message}")
                 print(f"📡 Facebook Response: {result}")
@@ -212,7 +213,7 @@ def post():
 
             except Exception as e:
                 print(f"[{datetime.now()}] ❌ Auto-post failed: {e}")
-                app.report(f"Autopost error: {e}")
+                report(f"Autopost error: {e}")
 
         # Always check comments every 2 minutes
         process_comments()
