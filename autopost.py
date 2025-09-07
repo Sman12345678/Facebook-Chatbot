@@ -1,19 +1,29 @@
-# autopost.py
-
 import os
 import time
 import random
 import requests
 from datetime import datetime
 import app
+from messageHandler import handle_text_message, handle_attachment, handle_text_command
+from app import PREFIX  # for command detection
 
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
+PAGE_ID = os.getenv("PAGE_ID")  # set your Page ID in .env
+
+FALLBACK_REPLIES = [
+    "🔥 Cool one! But hey… DM me if you’re serious 😉",
+    "😂 Haha that cracked me up. DM me if you want the real gist.",
+    "😎 Smooth comment! Respect. DM for more vibes 🚀",
+    "👀 I see you… pull up in the DMs for the rest.",
+    "🤣 You’re wild! Love it. Let’s chat more in DM.",
+    "👌 Noted! Short and sweet—just like you. DM me if you’re down.",
+    "🤖 That’s something even AI would blush at 😂. DM if you want more.",
+    "🚀 Blast off! That comment deserves a salute. Catch me in DM!",
+    "💡 Smart one, I like it. Wanna dive deeper? Hit my DM.",
+    "🔥🔥🔥 Straight fire. Respect! DM and let’s keep it rolling."
+]
 
 def post_text_to_page(message):
-    """
-    Posts text to the Facebook Page tied to PAGE_ACCESS_TOKEN
-    via the /me/feed endpoint (Graph API v22.0).
-    """
     url = "https://graph.facebook.com/v22.0/me/feed"
     payload = {
         "message": message,
@@ -21,102 +31,112 @@ def post_text_to_page(message):
     }
     return requests.post(url, data=payload).json()
 
+def reply_to_comment(comment_id, reply_message=None, image_url=None):
+    url = f"https://graph.facebook.com/v22.0/{comment_id}/comments"
+    payload = {
+        "access_token": PAGE_ACCESS_TOKEN
+    }
+    if reply_message:
+        payload["message"] = reply_message
+    if image_url:
+        payload["attachment_url"] = image_url
+    return requests.post(url, data=payload).json()
+
+def process_comments():
+    url = f"https://graph.facebook.com/v22.0/{PAGE_ID}/feed"
+    params = {
+        "fields": "id,message,comments{id,from,message,attachment}",
+        "access_token": PAGE_ACCESS_TOKEN
+    }
+    try:
+        feed = requests.get(url, params=params).json()
+        for post in feed.get("data", []):
+            if "comments" in post:
+                for comment in post["comments"]["data"]:
+                    comment_id = comment["id"]
+                    user_id = comment["from"]["id"]
+                    username = comment["from"]["name"]
+
+                    reply_text = None
+                    reply_image = None
+
+                    try:
+                        # Text comment
+                        if "message" in comment and comment["message"]:
+                            text = comment["message"]
+
+                            if text.startswith(PREFIX):
+                                command_name = text[len(PREFIX):].split(" ")[0]
+                                reply_text = handle_text_command(command_name, text, user_id)
+                            else:
+                                user_message = f"A user named {username} commented on your post with {text}, so provide a short and cool reply"
+                                reply_text = handle_text_message(user_id, user_message)
+
+                        # Image comment
+                        elif "attachment" in comment:
+                            attachment = comment["attachment"]
+                            if attachment.get("type") == "photo":
+                                image_url = attachment["media"]["image"]["src"]
+                                reply_text = handle_attachment(user_id, image_url, "image")
+                                reply_image = image_url
+                    except Exception as e:
+                        print(f"⚠️ Handler error: {e}")
+
+                    # Fallback if handler failed or returned nothing
+                    if not reply_text and not reply_image:
+                        reply_text = random.choice(FALLBACK_REPLIES)
+
+                    # Post reply
+                    if reply_text or reply_image:
+                        result = reply_to_comment(comment_id, reply_message=reply_text, image_url=reply_image)
+                        print(f"✅ Replied to comment {comment_id}: {result}")
+
+    except Exception as e:
+        print(f"❌ Error processing comments: {e}")
+        app.report(f"Comment processing error: {e}")
+
 def get_content_pool():
-    """
-    Returns a large pool of motivational quotes, tech tips,
-    AI facts, DIY hacks, and general life advice.
-    """
     return [
-        # Motivation & Quotes
-        "🌟 Believe in yourself. You're stronger than you think.",
-        "🔥 Every small step counts — keep moving forward.",
-        "🧠 'The best way to get started is to quit talking and begin doing.' – Walt Disney",
-        "💬 'Success is not in what you have, but who you are.' – Bo Bennett",
-        "🌱 'Do something today that your future self will thank you for.'",
-        "🚀 'Don't watch the clock; do what it does. Keep going.' – Sam Levenson",
-        "💡 'Success usually comes to those who are too busy to be looking for it.'",
-        "🎯 'You miss 100% of the shots you don't take.' – Wayne Gretzky",
-        "📚 'The harder you work for something, the greater you'll feel when you achieve it.'",
-        "🌞 'Dream it. Wish it. Do it.'",
-        "💪 ‘Push yourself because no one else is going to do it for you.’",
-        "🌟 ‘Great things never come from comfort zones.’",
-        "🔥 ‘Don’t stop when you’re tired. Stop when you’re done.’",
-        "🚀 ‘Success is not for the lazy.’",
-        "✨ ‘Wake up with determination, go to bed with satisfaction.’",
-        "🎯 ‘It always seems impossible until it’s done.’ – Nelson Mandela",
-        "📈 ‘You don’t have to be great to start, but you have to start to be great.’",
-        "⚡ ‘Believe you can and you’re halfway there.’ – Theodore Roosevelt",
-        "💡 ‘Hard work beats talent when talent doesn’t work hard.’",
-        "🌍 ‘The only limit to our realization of tomorrow is our doubts of today.’ – FDR",
-        # Tech Tips
-        "🔐 Always use strong, unique passwords for every account.",
-        "💡 Keep your software updated to protect against vulnerabilities.",
-        "📱 Use app permissions wisely to protect your privacy.",
-        "🛠️ Backup your important data regularly.",
-        "💾 Cloud storage is great for sharing and backup.",
-        "🔍 Use keyboard shortcuts to speed up your work.",
-        "⚡ Turn off unused devices to save energy and battery life.",
-        "🧹 Clear your browser cache periodically for better performance.",
-        "💻 Learn one new programming concept every week.",
-        "🌐 Use HTTPS websites for safer browsing.",
-        "🖥️ Practice coding challenges daily to improve problem-solving skills.",
-        "📡 Subscribe to tech newsletters to stay updated.",
-        "🔧 Keep your device drivers updated for smooth operation.",
-        "🖱️ Customize shortcuts and macros to boost productivity.",
-        "🔒 Use VPNs on public Wi-Fi to protect your data.",
-        # AI Facts
-        "🤖 GPT models learn patterns from massive datasets of text.",
-        "🧠 AI is helping doctors diagnose diseases earlier.",
-        "📊 Machine learning models improve with more data.",
-        "🤖 Natural Language Processing lets machines understand human language.",
-        "🚗 Self-driving cars rely heavily on AI and sensors.",
-        "🎨 AI can now generate art, music, and even write stories.",
-        "📈 AI helps businesses predict customer trends.",
-        "👾 AI chatbots improve customer service availability.",
-        "🧬 AI is accelerating research in genetics and biology.",
-        "🔮 The future of AI includes personalized assistants and smart homes.",
-        "⚙️ Understanding AI ethics is key to responsible development.",
-        "🔍 AI improves search engines by better understanding queries.",
-        "🎯 AI models require constant updates to stay relevant.",
-        # DIY & Life Tips
-        "🧰 DIY Tip: Baking soda + vinegar is a natural cleaner.",
-        "🔧 Fix squeaky hinges with a little WD-40 or cooking oil.",
-        "📦 Organize cables using old bread clips as labels.",
-        "🧴 Use lemon juice to remove stains and brighten whites.",
-        "📅 Plan your day the night before to boost productivity.",
-        "💧 Drink enough water every day for better health.",
-        "🧘 Take short breaks during work to refresh your mind.",
-        "🍳 Cooking tip: Let meat rest before cutting for juicier results.",
-        "🛏️ Make your bed daily to start the day with accomplishment.",
-        "📖 Read a little each day to expand your knowledge.",
-        "🌿 Houseplants improve air quality and mood.",
-        "⚡ Unplug electronics not in use to save energy.",
-        "🛠️ Regularly check and maintain home safety devices.",
-        "🎨 Try a new hobby to boost creativity and reduce stress.",
-        "🌞 Get sunlight daily for vitamin D and better mood."
+        "🌍 Life is a journey, not a race. Take each step with intention and gratitude. "
+        "The small choices you make daily shape your future. Stay consistent, stay humble, and stay focused. #motivation #growth #koraai",
+
+        "💡 Technology should empower us, not control us. Learn to use tools that save time, "
+        "protect your privacy, and expand your creativity. Master the machine before it masters you. #techtips #privacy #koraai",
+
+        "🚀 Success is built one brick at a time. Don’t chase shortcuts; embrace the process. "
+        "Every setback is a setup for a stronger comeback. #success #grind #koraai",
+
+        "🤖 AI is not here to replace humans; it’s here to amplify human potential. "
+        "Those who learn to work alongside it will lead the future. #AI #future #koraai",
+
+        "🌱 Balance is power. Work hard, rest well, and invest in your mind. "
+        "Growth happens when effort meets patience. #mindset #balance #koraai",
     ]
 
 def post():
-    """
-    Runs forever, posting one random message every 24 hours.
-    Logs and reports OAuth errors (code 100) which arise
-    if a Page ID scope issue occurs. Uses /me/feed to avoid:
-    (#100) The global id … is not allowed for this call 0
-    """
+    last_post_time = 0
+    WEEK = 604800  # seconds in a week
+
     while True:
-        message = random.choice(get_content_pool())
-        try:
-            result = post_text_to_page(message)
+        now = time.time()
 
-            # Handle specific OAuthException code 100
-            if result.get("error", {}).get("code") == 100:
-                app.report(f"Autopost OAuthException, need app-scoped ID: {result['error']['message']}")
+        # Post once a week
+        if now - last_post_time >= WEEK:
+            message = random.choice(get_content_pool())
+            try:
+                result = post_text_to_page(message)
 
-            print(f"[{datetime.now()}] ✅ Auto-posted: {message}")
-            print(f"📡 Facebook Response: {result}")
+                if result.get("error", {}).get("code") == 100:
+                    app.report(f"Autopost OAuthException, need app-scoped ID: {result['error']['message']}")
 
-        except Exception as e:
-            print(f"[{datetime.now()}] ❌ Auto-post failed: {e}")
-            app.report(f"Autopost error: {e}")
+                print(f"[{datetime.now()}] ✅ Auto-posted: {message}")
+                print(f"📡 Facebook Response: {result}")
+                last_post_time = now
 
-        time.sleep(604800)  # wait a week 😅
+            except Exception as e:
+                print(f"[{datetime.now()}] ❌ Auto-post failed: {e}")
+                app.report(f"Autopost error: {e}")
+
+        # Always check comments every 2 minutes
+        process_comments()
+        time.sleep(120)
