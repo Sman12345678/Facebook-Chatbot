@@ -93,7 +93,7 @@ def handle_text_message(user_id, user_message, history=None):
         return response.text
     except Exception as e:
         logger.error("Error processing text message: %s", str(e))
-        app.report(str(e))
+        report(str(e))
         if user_id in user_models:
             del user_models[user_id]
         return "😔 Sorry, I encountered an error processing your message."
