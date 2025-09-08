@@ -34,13 +34,21 @@ def post_text_to_page(message):
 
 def reply_to_comment(comment_id, reply_message=None, image_url=None):
     url = f"https://graph.facebook.com/v22.0/{comment_id}/comments"
-    payload = {
-        "access_token": PAGE_ACCESS_TOKEN
-    }
-    if reply_message:
+    payload = {"access_token": PAGE_ACCESS_TOKEN}
+
+    # Facebook prefers one type per request
+    if reply_message and not image_url:
         payload["message"] = reply_message
-    if image_url:
+    elif image_url and not reply_message:
         payload["attachment_url"] = image_url
+    else:
+        # If both exist, send text first then image separately
+        if reply_message:
+            requests.post(url, data={"message": reply_message, "access_token": PAGE_ACCESS_TOKEN})
+        if image_url:
+            requests.post(url, data={"attachment_url": image_url, "access_token": PAGE_ACCESS_TOKEN})
+        return {"status": "✅ Sent in two steps"}
+
     return requests.post(url, data=payload).json()
 
 def process_comments():
