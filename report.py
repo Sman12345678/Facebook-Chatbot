@@ -1,13 +1,20 @@
+import logging
+from datetime import datetime
+from config import ADMIN_ID
+from app import send_message
+
+logger = logging.getLogger(__name__)
+
+def get_current_time():
+    return datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
 def report(error_message):
-    """
-    Send an error message to the bot admin.
-    """
     try:
         formatted_message = f"""🚨Error Alert🚨
 
 🔴 Timestamp (UTC): {get_current_time()}
 
-🛠️ **Error Message:**
+🛠️ Error Message:
 {error_message}
 
 📂 |= End of Report =|"""
