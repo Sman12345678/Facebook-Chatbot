@@ -8,7 +8,7 @@ from io import BytesIO
 import urllib3
 import time
 import json
-from report import report 
+from utils.report import report 
 
 # Disable SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
