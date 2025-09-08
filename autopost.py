@@ -155,7 +155,8 @@ def post():
 
         # Always check comments every 2 minutes
         process_comments()
-        time.sleep(120)    payload = {"access_token": PAGE_ACCESS_TOKEN}
+        time.sleep(120)    
+        payload = {"access_token": PAGE_ACCESS_TOKEN}
 
     # Facebook prefers one type per request
     if reply_message and not image_url:
