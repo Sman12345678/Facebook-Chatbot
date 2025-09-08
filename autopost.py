@@ -189,7 +189,7 @@ def process_comments():
                                 command_name = text[len(PREFIX):].split(" ")[0]
                                 reply_text = handle_text_command(command_name, text, user_id)
                             else:
-                                user_message = f"A user named {username} commented on your post with ("{text}"), so provide a short and cool reply"
+                                user_message = f"A user named {username} commented on your post with *{text}*, so provide a short and cool reply"
                                 reply_text = handle_text_message(user_id, user_message)
                         elif "attachment" in comment:
                             attachment = comment["attachment"]
