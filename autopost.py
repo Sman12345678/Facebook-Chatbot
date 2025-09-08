@@ -91,7 +91,7 @@ import time
 import random
 import requests
 import logging
-from report import report
+from utils.report import report
 from datetime import datetime
 from messageHandler import handle_text_message, handle_attachment, handle_text_command
 import sqlite3
