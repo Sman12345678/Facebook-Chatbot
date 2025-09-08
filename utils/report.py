@@ -19,7 +19,7 @@ def report(error_message):
 {error_message}
 
 📂 |= End of Report =|"""
-        send_message(ADMIN_ID, formatted_message)
+        send_message(ADMINS, formatted_message)
         logger.info("Error successfully sent to the bot admin.")
     except Exception as e:
         logger.error(f"Failed to notify admin about the error: {e}")
