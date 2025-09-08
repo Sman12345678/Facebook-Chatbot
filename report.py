@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from config import ADMIN_ID
+from config import ADMINS
 from app import send_message
 
 logger = logging.getLogger(__name__)
