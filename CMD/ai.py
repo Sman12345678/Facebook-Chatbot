@@ -1,8 +1,11 @@
+
 import requests
 
 memory_db = {}
 
 def execute(message, sender_id):
+    if not message:
+        return "Please provide a message. /ai hello"
     if sender_id not in memory_db:
         memory_db[sender_id] = []
     memory_db[sender_id].append(message)
