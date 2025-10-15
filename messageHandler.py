@@ -89,11 +89,11 @@ def handle_text_message(user_id, user_msg, history=None):
         logger.info("Processing message from user %s: %s", user_id, user_msg)
         chat = get_or_create_chat(user_id, history)
         
-        if not hasattr(chat, 'system_instruction'):
-            logger.error("Missing system instruction for user %s", user_id)
-            raise ValueError("System instruction not defined")
+        #if not hasattr(chat, 'system_instruction'):
+            #logger.error("Missing system instruction for user %s", user_id)
+            #raise ValueError("System instruction not defined")
         
-        res = chat.send_message(f"{chat.system_instruction}\n\nHuman: {user_msg}")
+        res = chat.send_message(f"{system_instruction}\n\nHuman: {user_msg}")
         return [{"success": True, "type": "text", "data": res.text}]
     
     except (ValueError, TypeError, AttributeError) as e:
