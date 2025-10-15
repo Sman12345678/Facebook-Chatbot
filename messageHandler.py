@@ -94,7 +94,7 @@ def handle_text_message(user_id, user_msg, history=None):
             #raise ValueError("System instruction not defined")
         
         res = chat.send_message(f"{system_instruction}\n\nHuman: {user_msg}")
-        return [{"success": True, "type": "text", "data": res.text}]
+        return res.text
     
     except (ValueError, TypeError, AttributeError) as e:
         logger.warning("Primary process failed for user %s: %s. Attempting Kaizenji fallback...", user_id, str(e))
@@ -109,7 +109,7 @@ def handle_text_message(user_id, user_msg, history=None):
 
             r = requests.get(api_url, params=params, timeout=30)
             if r.status_code != 200:
-                return [{"success": False, "type": "text", "data": f"⚠️ The Kaizenji service returned an error (Status: {r.status_code}). Please try again later."}]
+                return f"The Kaizenji service returned an error (Status: {r.status_code}). Please try again later."
 
             data = r.json()
             image_url = data.get("images")
@@ -132,13 +132,13 @@ def handle_text_message(user_id, user_msg, history=None):
                         messages.append({
                             "success": False,
                             "type": "text",
-                            "data": "⚠️ The generated image could not be retrieved. Please try again."
+                            "data": "The generated image could not be retrieved. Please try again."
                         })
                 except Exception as img_e:
                     messages.append({
                         "success": False,
                         "type": "text",
-                        "data": f"⚠️ There was an issue retrieving the generated image: {str(img_e)}"
+                        "data": f"There was an issue retrieving the generated image: {str(img_e)}"
                     })
                     logger.warning("Image retrieval failed for user %s: %s", user_id, str(img_e))
 
@@ -150,7 +150,13 @@ def handle_text_message(user_id, user_msg, history=None):
                     "data": text_response
                 })
 
-            return messages or [{"success": False, "type": "text", "data": "⚠️ No response was received from the Kaizenji API. Please try again later."}]
+            # If text exists, return it directly; otherwise, return image responses or fallback text
+            if text_response:
+                return text_response
+            elif messages:
+                return messages
+            else:
+                return "No response was received from the Kaizenji API. Please try again later."
         
         except Exception as api_e:
             logger.error("Kaizenji API fallback failed for user %s: %s", user_id, str(api_e))
@@ -161,12 +167,13 @@ def handle_text_message(user_id, user_msg, history=None):
                     logger.info("Removed user %s from user_models after API failure", user_id)
             except NameError:
                 logger.warning("user_models not defined, skipping cleanup")
-            return [{"success": False, "type": "text", "data": "⚠️ A system error occurred while processing your message. Please try again shortly."}]
+            return "A system error occurred while processing your message. Please try again shortly."
     
     except Exception as e:
         logger.critical("Unexpected system error for user %s: %s", user_id, str(e))
         report(str(e))
-        return [{"success": False, "type": "text", "data": "⚠️ An unexpected error occurred on our end. Our team has been notified and is working to fix it."}]
+        return "An unexpected error occurred on our end. Our team has been notified and is working to fix it."
+
 
 def handle_text_command(command_name, message, sender_id):
     command_name=command_name.lower()
