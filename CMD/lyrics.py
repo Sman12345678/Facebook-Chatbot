@@ -30,7 +30,7 @@ def execute(message, sender_id=None):
     try:
         logging.info(f"Fetching lyrics for: {message}")
         
-        api_url = f"https://kaiz-apis.gleeze.com/api/lyrics?title={message}&apikey=83248daa-8ad2-45d0-93d5-c1c8752b97d3"
+        api_url = f"https://kaiz-apis.gleeze.com/api/lyrics?title={message}&apikey=33ee985b-fead-4f79-837c-1ec8fa1d5c4b"
       
         response = requests.get(api_url)
         if response.status_code == 200:
