@@ -18,7 +18,8 @@ def report(error_message):
 {error_message}
 
 📂 |= End of Report =|"""
-        send_message([str(a) for a in ADMINS], formatted_message)
-        logger.info("Error successfully sent to the bot admin.")
+        for admin_id in ADMINS:
+            send_message(str(admin_id), formatted_message)
+        logger.info("Error successfully sent to the bot admin(s).")
     except (ImportError, TypeError, ValueError) as e:
         logger.error(f"Failed to notify admin about the error: {e}")
