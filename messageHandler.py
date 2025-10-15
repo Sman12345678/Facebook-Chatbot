@@ -84,19 +84,39 @@ def get_or_create_chat(user_id, history=None):
     else:
         return initialize_text_model(user_id, history)
 
-def handle_text_message(user_id, user_message, history=None):
+def handle_text_message(user_id, user_msg, history=None):
     try:
-        logger.info("Processing text message from %s: %s", user_id, user_message)
+        logger.info("Processing text message from %s: %s", user_id, user_msg)
         chat = get_or_create_chat(user_id, history)
-       
-        response = chat.send_message(f"{system_instruction}\n\nHuman: {user_message}")
-        return response.text
+        
+        if not hasattr(chat, 'system_instruction'):
+            logger.error("System instruction not defined for chat")
+            raise ValueError("System instruction is missing")
+            
+        res = chat.send_message(f"{chat.system_instruction}\n\nHuman: {user_msg}")
+        return res.text
+    
+    except (ValueError, TypeError, AttributeError) as e:
+        logger.warning("Primary method failed for user %s: %s, falling back to API", user_id, str(e))
+        try:
+            r = requests.get(f"https://text.pollinations.ai/{user_msg}")
+            r.raise_for_status()
+            return r.text
+        except requests.RequestException as api_e:
+            logger.error("API fallback failed for user %s: %s", user_id, str(api_e))
+            report(str(api_e))
+            try:
+                if user_id in user_models:
+                    del user_models[user_id]
+                    logger.info("Removed user %s from user_models due to error", user_id)
+            except NameError:
+                logger.warning("user_models not defined, skipping deletion")
+            return "😔 Sorry, I encountered an error processing your message. Please try again."
+    
     except Exception as e:
-        logger.error("Error processing text message: %s", str(e))
+        logger.critical("Unexpected error for user %s: %s", user_id, str(e))
         report(str(e))
-        if user_id in user_models:
-            del user_models[user_id]
-        return "😔 Sorry, I encountered an error processing your message."
+        return "😔 An unexpected error occurred. We're working on it!"
 
 def handle_text_command(command_name, message, sender_id):
     command_name=command_name.lower()
