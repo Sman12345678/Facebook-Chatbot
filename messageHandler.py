@@ -86,37 +86,87 @@ def get_or_create_chat(user_id, history=None):
 
 def handle_text_message(user_id, user_msg, history=None):
     try:
-        logger.info("Processing text message from %s: %s", user_id, user_msg)
+        logger.info("Processing message from user %s: %s", user_id, user_msg)
         chat = get_or_create_chat(user_id, history)
         
         if not hasattr(chat, 'system_instruction'):
-            logger.error("System instruction not defined for chat")
-            raise ValueError("System instruction is missing")
-            
+            logger.error("Missing system instruction for user %s", user_id)
+            raise ValueError("System instruction not defined")
+        
         res = chat.send_message(f"{chat.system_instruction}\n\nHuman: {user_msg}")
-        return res.text
+        return [{"success": True, "type": "text", "data": res.text}]
     
     except (ValueError, TypeError, AttributeError) as e:
-        logger.warning("Primary method failed for user %s: %s, falling back to API", user_id, str(e))
+        logger.warning("Primary process failed for user %s: %s. Attempting Kaizenji fallback...", user_id, str(e))
         try:
-            r = requests.get(f"https://text.pollinations.ai/{user_msg}")
-            r.raise_for_status()
-            return r.text
-        except requests.RequestException as api_e:
-            logger.error("API fallback failed for user %s: %s", user_id, str(api_e))
+            api_url = "https://kaiz-apis.gleeze.com/api/gpt-4o-pro"
+            params = {
+                "ask": user_msg,
+                "uid": user_id,
+                "imageUrl": "",
+                "apikey": "33ee985b-fead-4f79-837c-1ec8fa1d5c4b"
+            }
+
+            r = requests.get(api_url, params=params, timeout=30)
+            if r.status_code != 200:
+                return [{"success": False, "type": "text", "data": f"⚠️ The Kaizenji service returned an error (Status: {r.status_code}). Please try again later."}]
+
+            data = r.json()
+            image_url = data.get("images")
+            text_response = data.get("response", "")
+            messages = []
+
+            # Handle image response
+            if image_url:
+                try:
+                    img_response = requests.get(image_url, stream=True, timeout=30)
+                    if img_response.status_code == 200:
+                        image_bytes = BytesIO(img_response.content)
+                        messages.append({
+                            "success": True,
+                            "type": "image",
+                            "data": image_bytes
+                        })
+                        logger.info("Successfully fetched Kaizenji image for user %s", user_id)
+                    else:
+                        messages.append({
+                            "success": False,
+                            "type": "text",
+                            "data": "⚠️ The generated image could not be retrieved. Please try again."
+                        })
+                except Exception as img_e:
+                    messages.append({
+                        "success": False,
+                        "type": "text",
+                        "data": f"⚠️ There was an issue retrieving the generated image: {str(img_e)}"
+                    })
+                    logger.warning("Image retrieval failed for user %s: %s", user_id, str(img_e))
+
+            # Always include textual reply
+            if text_response:
+                messages.append({
+                    "success": True,
+                    "type": "text",
+                    "data": text_response
+                })
+
+            return messages or [{"success": False, "type": "text", "data": "⚠️ No response was received from the Kaizenji API. Please try again later."}]
+        
+        except Exception as api_e:
+            logger.error("Kaizenji API fallback failed for user %s: %s", user_id, str(api_e))
             report(str(api_e))
             try:
                 if user_id in user_models:
                     del user_models[user_id]
-                    logger.info("Removed user %s from user_models due to error", user_id)
+                    logger.info("Removed user %s from user_models after API failure", user_id)
             except NameError:
-                logger.warning("user_models not defined, skipping deletion")
-            return "😔 Sorry, I encountered an error processing your message. Please try again."
+                logger.warning("user_models not defined, skipping cleanup")
+            return [{"success": False, "type": "text", "data": "⚠️ A system error occurred while processing your message. Please try again shortly."}]
     
     except Exception as e:
-        logger.critical("Unexpected error for user %s: %s", user_id, str(e))
+        logger.critical("Unexpected system error for user %s: %s", user_id, str(e))
         report(str(e))
-        return "😔 An unexpected error occurred. We're working on it!"
+        return [{"success": False, "type": "text", "data": "⚠️ An unexpected error occurred on our end. Our team has been notified and is working to fix it."}]
 
 def handle_text_command(command_name, message, sender_id):
     command_name=command_name.lower()
