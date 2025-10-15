@@ -1,7 +1,6 @@
 import logging
 from datetime import datetime
 from config import ADMINS
-# from app import send_message
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +18,7 @@ def report(error_message):
 {error_message}
 
 📂 |= End of Report =|"""
-        send_message(ADMINS, formatted_message)
+        send_message([str(a) for a in ADMINS], formatted_message)
         logger.info("Error successfully sent to the bot admin.")
-    except Exception as e:
+    except (ImportError, TypeError, ValueError) as e:
         logger.error(f"Failed to notify admin about the error: {e}")
