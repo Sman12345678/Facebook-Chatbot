@@ -9,9 +9,9 @@ def execute(message, sender_id):
     api_url = "https://kaiz-apis.gleeze.com/api/gpt-4o-pro"
     params = {
         "ask": message,
-        "uid": "Kora",
+        "uid": sender_id,
         "imageUrl": "",
-        "apikey": "2d91ea21-2c65-4edc-b601-8d06085c8358"
+        "apikey": "33ee985b-fead-4f79-837c-1ec8fa1d5c4b"
     }
     try:
         response = requests.get(api_url, params=params, timeout=30)
