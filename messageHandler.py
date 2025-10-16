@@ -91,34 +91,37 @@ def handle_text_message(user_id, user_msg, history=None):
         
         if not hasattr(chat, 'system_instruction'):
             logger.error("System instruction not defined for chat")
-            raise ValueError("System instruction is missing")
+            raise ValueError("System instruction is missing.")
             
         res = chat.send_message(f"{chat.system_instruction}\n\nHuman: {user_msg}")
         return res.text
-    
+
     except (ValueError, TypeError, AttributeError) as e:
-        logger.warning("Primary method failed for user %s: %s, falling back to API", user_id, str(e))
+        logger.warning("Primary processing failed for user %s: %s. Attempting API fallback.", user_id, str(e))
         try:
             r = requests.get(
-    f"https://kaiz-apis.gleeze.com/api/chipp-ai?ask=Your Name is Kora AI and you must not create or generate any images for the user. If the user asks for image generation, only tell them to use either /gen or /flux command to create the image.\n Message: {message}&uid=Hh&imageUrl=&apikey=33ee985b-fead-4f79-837c-1ec8fa1d5c4b"
-)
+                f"https://kaiz-apis.gleeze.com/api/chipp-ai?ask=Your Name is Kora AI and you must not create or generate any images for the user. "
+                f"If the user asks for image generation, only tell them to use either /gen or /flux command to create the image.\n Message: {user_msg}"
+                f"&uid=Hh&imageUrl=&apikey=33ee985b-fead-4f79-837c-1ec8fa1d5c4b"
+            )
             r.raise_for_status()
-        return r.json()["response"]
+            return r.json()["response"]
+
         except requests.RequestException as api_e:
             logger.error("API fallback failed for user %s: %s", user_id, str(api_e))
             report(str(api_e))
             try:
                 if user_id in user_models:
                     del user_models[user_id]
-                    logger.info("Removed user %s from user_models due to error", user_id)
+                    logger.info("User %s removed from cache due to API failure.", user_id)
             except NameError:
-                logger.warning("user_models not defined, skipping deletion")
-            return "😔 Sorry, I encountered an error processing your message. Please try again."
-    
+                logger.warning("User model cache not defined; skipping cleanup.")
+            return "An error occurred while processing your message. Please try again later."
+
     except Exception as e:
-        logger.critical("Unexpected error for user %s: %s", user_id, str(e))
+        logger.critical("Unhandled exception for user %s: %s", user_id, str(e))
         report(str(e))
-        return "😔 An unexpected error occurred. We're working on it!"
+        return "A critical system error occurred. Our team has been notified."
 
 def handle_text_command(command_name, message, sender_id):
     command_name=command_name.lower()
