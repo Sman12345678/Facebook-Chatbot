@@ -102,7 +102,7 @@ def handle_text_message(user_id, user_msg, history=None):
             r = requests.get(
                 f"https://kaiz-apis.gleeze.com/api/chipp-ai?ask=Your Name is Kora AI and you must not create or generate any images for the user. "
                 f"If the user asks for image generation, only tell them to use either /gen or /flux command to create the image.\n Message: {user_msg}"
-                f"&uid=Hh&imageUrl=&apikey=33ee985b-fead-4f79-837c-1ec8fa1d5c4b"
+                f"&uid={user_id}&imageUrl=&apikey=33ee985b-fead-4f79-837c-1ec8fa1d5c4b"
             )
             r.raise_for_status()
             return r.json()["response"]
