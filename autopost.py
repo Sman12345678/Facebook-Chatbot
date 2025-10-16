@@ -1,5 +1,3 @@
-
-
 def get_content_pool():
     return [
         "🌍 Life isn’t a race. It’s a journey meant to be embraced with open arms. Every step you take, every challenge you overcome, is a part of your growth story. Stay present, stay focused, and let every experience shape you into the best version of yourself. #motivation #growth #koraai",
@@ -140,19 +138,6 @@ def load_replied_comments():
     return set(comment[0] for comment in comments)
 
 def save_replied_comment(comment_id):
-    """Attempts to save comment_id. Returns True if this process should reply, False if already handled."""
-    connection = sqlite3.connect(DATABASE_NAME)
-    cursor = connection.cursor()
-    cursor.execute('''
-    INSERT OR IGNORE INTO replied_comments (id, timestamp)
-    VALUES (?, ?)
-    ''', (comment_id, int(time.time())))
-    connection.commit()
-    rowcount = cursor.rowcount  # rowcount == 1 if inserted, 0 if already exists
-    connection.close()
-    return rowcount == 1
-
-def save_replied_comment(comment_id):
     connection = sqlite3.connect(DATABASE_NAME)
     cursor = connection.cursor()
     cursor.execute('''
@@ -183,15 +168,15 @@ def process_comments():
         "fields": "id,message,comments{id,from,message,attachment}",
         "access_token": PAGE_ACCESS_TOKEN
     }
+    replied_comments = load_replied_comments()
     try:
         feed = requests.get(url, params=params).json()
         for post in feed.get("data", []):
             if "comments" in post:
                 for comment in post["comments"]["data"]:
                     comment_id = comment["id"]
-                    # Try to save first, only one process will get True
-                    if not save_replied_comment(comment_id):
-                        continue  # Already replied by someone else/process
+                    if comment_id in replied_comments:
+                        continue
                     user_id = comment["from"]["id"]
                     username = comment["from"]["name"]
                     reply_text = None
@@ -215,9 +200,11 @@ def process_comments():
                     if reply_text:
                         result = reply_to_comment(comment_id, reply_message=reply_text)
                         logging.info(f"Replied to comment {comment_id}: {result}")
+                        save_replied_comment(comment_id)
     except Exception as e:
         logging.error(f"Error processing comments: {e}")
         report(f"Comment processing error: {e}")
+
 def post():
     last_post_time = 0
     WEEK = 604800
