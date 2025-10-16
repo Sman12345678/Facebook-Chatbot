@@ -11,7 +11,7 @@ def execute(message=None, sender_id=None):
     response = (
         "╭──⦿【 ♕ KORA AI COMMANDS 】\n"
         "│ 🌈 Available Modules:\n"
-        "╰──────────────⦿\n\n"
+        "╰────────────⦿\n\n"
     )
 
     for filename in os.listdir("CMD"):
@@ -23,24 +23,24 @@ def execute(message=None, sender_id=None):
                 response += (
                     f"╭──⦿【 ⚙️ /{command_name} 】\n"
                     f"│ 📝 Description: {description}\n"
-                    f"╰──────────────⦿\n\n"
+                    f"╰────────────⦿\n\n"
                 )
             except Exception as e:
                 logger.warning(f"Failed to load command {command_name}: {e}")
                 response += (
                     f"╭──⦿【 ⚙️ /{command_name} 】\n"
                     f"│ ⚠️ Description: Unable to load description.\n"
-                    f"╰──────────────⦿\n\n"
+                    f"╰────────────⦿\n\n"
                 )
 
     response += (
         "╭──⦿【 💬 USAGE 】\n"
         "│ Type: /command_name\n"
         "│ Example: /up\n"
-        "╰──────────────⦿\n\n"
-        "╭──────────────⦿\n"
+        "╰────────────⦿\n\n"
+        "╭────────────⦿\n"
         "│ 🛡️ KORA AI by Kolawole Suleiman\n"
-        "╰──────────────⦿"
+        "╰────────────⦿"
     )
 
     return response
