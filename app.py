@@ -862,7 +862,7 @@ def autouptime():
     logger.info(f"Auto uptimer started for {url}")
     while True:
         try:
-            time.sleep(20)
+            time.sleep(900)
             resp = requests.get(url)
             logger.debug(f"Uptimer ping sent to {url}, status: {resp.status_code}")
         except Exception as e:
